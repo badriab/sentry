@@ -3,17 +3,28 @@ import {Location} from 'history';
 import {browserHistory} from 'react-router';
 import styled from '@emotion/styled';
 
+import {t} from 'app/locale';
 import CreateAlertButton from 'app/components/createAlertButton';
 import * as Layout from 'app/components/layouts/thirds';
 import {getParams} from 'app/components/organizations/globalSelectionHeader/getParams';
 import space from 'app/styles/space';
-import {Organization, Project} from 'app/types';
+import {Organization, Project, SelectValue} from 'app/types';
 import EventView from 'app/utils/discover/eventView';
 import {decodeScalar} from 'app/utils/queryString';
 import SearchBar from 'app/views/events/searchBar';
+import DropdownControl, {DropdownItem} from 'app/components/dropdownControl';
 
 import TransactionVitals from './transactionVitals';
 import TransactionHeader, {Tab} from '../transactionSummary/header';
+
+const FILTER_OPTIONS: SelectValue<string>[] = [
+  {label: t('Upper outer fence'), value: 'upper_outer_fence'},
+  {label: t('Upper inner fence'), value: 'upper_inner_fence'},
+  {label: t('P90'), value: 'p90'},
+  {label: t('P95'), value: 'p95'},
+  {label: t('P99'), value: 'p99'},
+  {label: t('All'), value: 'all'},
+];
 
 type Props = {
   location: Location;
@@ -58,10 +69,32 @@ class RumContent extends React.Component<Props, State> {
     this.setState({incompatibleAlertNotice});
   };
 
+  getActiveFilter() {
+    const {location} = this.props;
+
+    const dataFilter = location.query.data_filter
+      ? decodeScalar(location.query.data_filter)
+      : 'upper_outer_fence';
+    return FILTER_OPTIONS.find(item => item.value === dataFilter) || FILTER_OPTIONS[0];
+  }
+
+  handleFilterChange = (value: string) => {
+    const {location} = this.props;
+    browserHistory.push({
+      pathname: location.pathname,
+      query: {
+        ...location.query,
+        cursor: undefined,
+        data_filter: value,
+      },
+    });
+  };
+
   render() {
     const {transactionName, location, eventView, projects, organization} = this.props;
     const {incompatibleAlertNotice} = this.state;
     const query = decodeScalar(location.query.query) || '';
+    const activeFilter = this.getActiveFilter();
 
     return (
       <React.Fragment>
@@ -79,17 +112,35 @@ class RumContent extends React.Component<Props, State> {
             <Layout.Main fullWidth>{incompatibleAlertNotice}</Layout.Main>
           )}
           <Layout.Main fullWidth>
-            <StyledSearchBar
-              organization={organization}
-              projectIds={eventView.project}
-              query={query}
-              fields={eventView.fields}
-              onSearch={this.handleSearch}
-            />
+            <StyledActions>
+              <StyledSearchBar
+                organization={organization}
+                projectIds={eventView.project}
+                query={query}
+                fields={eventView.fields}
+                onSearch={this.handleSearch}
+              />
+              <DropdownControl
+                buttonProps={{prefix: t('Filter')}}
+                label={activeFilter.label}
+              >
+                {FILTER_OPTIONS.map(({label, value}) => (
+                  <DropdownItem
+                    key={value}
+                    onSelect={this.handleFilterChange}
+                    eventKey={value}
+                    isActive={value === activeFilter.value}
+                  >
+                    {label}
+                  </DropdownItem>
+                ))}
+              </DropdownControl>
+            </StyledActions>
             <TransactionVitals
               organization={organization}
               location={location}
               eventView={eventView}
+              dataFilter={activeFilter.value}
             />
           </Layout.Main>
         </Layout.Body>
@@ -99,6 +150,15 @@ class RumContent extends React.Component<Props, State> {
 }
 
 const StyledSearchBar = styled(SearchBar)`
+  flex-grow: 1;
+`;
+
+const StyledActions = styled('div')`
+  display: grid;
+  grid-gap: ${space(2)};
+  grid-template-columns: auto min-content;
+
+  align-items: center;
   margin-bottom: ${space(3)};
 `;
 
