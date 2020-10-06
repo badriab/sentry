@@ -19,7 +19,7 @@ class PackageStatus extends React.Component<Props> {
         return <IconCircle />;
       case 'error':
       default:
-        return <IconFlag color="red400" />;
+        return <IconFlag color="purple400" />;
     }
   }
 
@@ -43,6 +43,9 @@ class PackageStatus extends React.Component<Props> {
 export const PackageStatusIcon = styled('span')`
   margin-left: ${space(0.5)};
   opacity: 0;
+  display: flex;
+  height: 100%;
+  align-items: center;
 `;
 
 export default PackageStatus;

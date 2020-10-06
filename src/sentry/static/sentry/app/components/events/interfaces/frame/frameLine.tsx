@@ -4,11 +4,16 @@ import classNames from 'classnames';
 import scrollToElement from 'scroll-to-element';
 import styled from '@emotion/styled';
 
+import Button from 'app/components/button';
 import {defined, objectIsEmpty} from 'app/utils';
 import {t} from 'app/locale';
-import TogglableAddress from 'app/components/events/interfaces/togglableAddress';
+import TogglableAddress, {
+  TogglableAddressIcon,
+} from 'app/components/events/interfaces/togglableAddress';
 import PackageLink from 'app/components/events/interfaces/packageLink';
-import PackageStatus from 'app/components/events/interfaces/packageStatus';
+import PackageStatus, {
+  PackageStatusIcon,
+} from 'app/components/events/interfaces/packageStatus';
 import StrictClick from 'app/components/strictClick';
 import Tooltip from 'app/components/tooltip';
 import space from 'app/styles/space';
@@ -16,10 +21,11 @@ import withSentryAppComponents from 'app/utils/withSentryAppComponents';
 import {DebugMetaActions} from 'app/stores/debugMetaStore';
 import {SymbolicatorStatus} from 'app/components/events/interfaces/types';
 import {combineStatus} from 'app/components/events/interfaces/debugMeta/utils';
-import {IconRefresh, IconAdd, IconSubtract, IconQuestion, IconWarning} from 'app/icons';
+import {IconRefresh, IconChevron, IconQuestion, IconWarning} from 'app/icons';
 import overflowEllipsis from 'app/styles/overflowEllipsis';
 import {Frame, SentryAppComponent, PlatformType} from 'app/types';
 import DebugImage from 'app/components/events/interfaces/debugMeta/debugImage';
+import {ListItem} from 'app/components/list';
 
 import FrameDefaultTitle from './frameDefaultTitle';
 import FrameContext from './frameContext';
@@ -166,16 +172,17 @@ export class FrameLine extends React.Component<Props, State> {
     if (!this.isExpandable()) {
       return null;
     }
+
+    const {isExpanded} = this.state;
+
     return (
-      <a
-        key="expander"
-        title={t('Toggle context')}
-        onClick={this.toggleContext}
-        className="btn btn-default btn-toggle"
-        css={this.getPlatform() === 'csharp' && {display: 'block !important'}} // remove important once we get rid of css files
-      >
-        {this.state.isExpanded ? <IconSubtract size="8px" /> : <IconAdd size="8px" />}
-      </a>
+      <ToogleContextButton title={t('Toggle Context')} onClick={this.toggleContext}>
+        <StyledIconChevron
+          isExpanded={!!isExpanded}
+          direction={isExpanded ? 'up' : 'down'}
+          size="8px"
+        />
+      </ToogleContextButton>
     );
   }
 
@@ -314,22 +321,22 @@ export class FrameLine extends React.Component<Props, State> {
                 isFoundByStackScanning={this.isFoundByStackScanning()}
                 isInlineFrame={this.isInlineFrame()}
                 onToggle={onAddressToggle}
-                maxLengthOfRelativeAddress={maxLengthOfRelativeAddress}
+                relativeAddressMaxlength={maxLengthOfRelativeAddress}
               />
             )}
-            <Symbol className="symbol">
+            <Symbol>
               <FrameFunctionName frame={data} />{' '}
-              {hint !== null ? (
+              {hint !== null && (
                 <HintStatus>
                   <Tooltip title={hint}>{hintIcon}</Tooltip>
                 </HintStatus>
-              ) : null}
+              )}
               {data.filename && (
                 <Tooltip title={data.absPath} disabled={!enablePathTooltip}>
-                  <span className="filename">
+                  <Filename>
                     {data.filename}
-                    {data.lineNo ? ':' + data.lineNo : ''}
-                  </span>
+                    {data.lineNo ? `: ${data.lineNo}` : ''}
+                  </Filename>
                 </Tooltip>
               )}
             </Symbol>
@@ -355,6 +362,7 @@ export class FrameLine extends React.Component<Props, State> {
 
   render() {
     const data = this.props.data;
+
     const className = classNames({
       frame: true,
       'is-expandable': this.isExpandable(),
@@ -368,7 +376,7 @@ export class FrameLine extends React.Component<Props, State> {
     const props = {className};
 
     return (
-      <li {...props}>
+      <StyledListItem {...props}>
         {this.renderLine()}
         <FrameContext
           frame={data}
@@ -382,7 +390,7 @@ export class FrameLine extends React.Component<Props, State> {
           expandable={this.isExpandable()}
           isExpanded={this.state.isExpanded}
         />
-      </li>
+      </StyledListItem>
     );
   }
 }
@@ -455,10 +463,32 @@ const Symbol = styled('span')`
   grid-column-end: -1;
   order: 3;
 
+  word-break: break-word;
+  flex: 1;
+
+  code {
+    background: transparent;
+    color: ${p => p.theme.gray800};
+    padding-right: ${space(0.5)};
+  }
+
   @media (min-width: ${props => props.theme.breakpoints[0]}) {
     order: 0;
     grid-column-start: auto;
     grid-column-end: auto;
+  }
+`;
+
+const Filename = styled('span')`
+  color: ${p => p.theme.purple400};
+  margin-right: ${space(0.5)};
+
+  :before {
+    content: '(';
+  }
+
+  :after {
+    content: ')';
   }
 `;
 
@@ -469,6 +499,43 @@ const StyledIconRefresh = styled(IconRefresh)`
 const LeadHint = styled('div')`
   ${overflowEllipsis}
   width: 67px;
+`;
+
+const StyledIconChevron = styled(IconChevron)<{isExpanded: boolean}>`
+  transform: rotate(${p => (p.isExpanded ? '180deg' : '0deg')});
+  transition: 0.1s all;
+`;
+
+// the Buton's label has the padding of 3px because the button size has to be 16x16 px.
+const ToogleContextButton = styled(Button)`
+  span:first-child {
+    padding: 3px;
+  }
+`;
+
+const StyledListItem = styled(ListItem)`
+  padding-left: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  ${PackageStatusIcon} {
+    opacity: 0;
+    flex-shrink: 0;
+  }
+  :hover {
+    ${PackageStatusIcon} {
+      opacity: 1;
+    }
+    ${TogglableAddressIcon} {
+      visibility: visible;
+    }
+  }
+  ul &:before {
+    content: none;
+  }
+  > *:first-child {
+    flex: 1;
+    width: 100%;
+  }
 `;
 
 export default withSentryAppComponents(FrameLine, {componentType: 'stacktrace-link'});

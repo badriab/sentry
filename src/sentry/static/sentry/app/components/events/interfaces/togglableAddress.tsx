@@ -7,35 +7,41 @@ import {t} from 'app/locale';
 import {IconFilter} from 'app/icons';
 import {formatAddress, parseAddress} from 'app/components/events/interfaces/utils';
 import overflowEllipsis from 'app/styles/overflowEllipsis';
+import {Theme} from 'app/utils/theme';
 
 type Props = {
   address: string;
   startingAddress: string | null;
   isAbsolute: boolean;
-  onToggle?: React.MouseEventHandler<SVGElement>;
   isFoundByStackScanning: boolean;
   isInlineFrame: boolean;
-  maxLengthOfRelativeAddress: number;
+  relativeAddressMaxlength: number;
+  onToggle?: React.MouseEventHandler<SVGElement>;
 };
 
-class TogglableAddress extends React.Component<Props> {
-  convertAbsoluteAddressToRelative() {
-    const {startingAddress, address, maxLengthOfRelativeAddress} = this.props;
+const TogglableAddress = ({
+  startingAddress,
+  address,
+  relativeAddressMaxlength,
+  isInlineFrame,
+  isFoundByStackScanning,
+  isAbsolute,
+  onToggle,
+}: Props) => {
+  const convertAbsoluteAddressToRelative = () => {
     if (!startingAddress) {
       return '';
     }
 
     const relativeAddress = formatAddress(
       parseAddress(address) - parseAddress(startingAddress),
-      maxLengthOfRelativeAddress
+      relativeAddressMaxlength
     );
 
     return `+${relativeAddress}`;
-  }
+  };
 
-  getAddressTooltip() {
-    const {isInlineFrame, isFoundByStackScanning} = this.props;
-
+  const getAddressTooltip = () => {
     if (isInlineFrame && isFoundByStackScanning) {
       return t('Inline frame, found by stack scanning');
     }
@@ -48,79 +54,70 @@ class TogglableAddress extends React.Component<Props> {
       return t('Found by stack scanning');
     }
 
-    return null;
-  }
+    return undefined;
+  };
 
-  render() {
-    const {
-      address,
-      isAbsolute,
-      onToggle,
-      isFoundByStackScanning,
-      isInlineFrame,
-    } = this.props;
-    const relativeAddress = this.convertAbsoluteAddressToRelative();
-    const canBeConverted = !!(onToggle && relativeAddress);
+  const relativeAddress = convertAbsoluteAddressToRelative();
+  const canBeConverted = !!(onToggle && relativeAddress);
+  const formattedAddress = !relativeAddress || isAbsolute ? address : relativeAddress;
+  const tooltipTitle = getAddressTooltip();
 
-    const formattedAddress = !relativeAddress || isAbsolute ? address : relativeAddress;
-
-    return (
-      <Address>
-        {canBeConverted && (
-          <Tooltip title={isAbsolute ? t('Absolute') : t('Relative')}>
-            <Toggle onClick={onToggle} size="xs" />
-          </Tooltip>
-        )}
-
-        <Tooltip
-          title={this.getAddressTooltip()}
-          disabled={!(isFoundByStackScanning || isInlineFrame)}
+  return (
+    <Wrapper>
+      {canBeConverted && (
+        <TooltipAddressIcon title={isAbsolute ? t('Absolute') : t('Relative')}>
+          <TogglableAddressIcon onClick={onToggle} size="xs" color="purple400" />
+        </TooltipAddressIcon>
+      )}
+      <Tooltip title={tooltipTitle} disabled={!(isFoundByStackScanning || isInlineFrame)}>
+        <Address
+          isFoundByStackScanning={isFoundByStackScanning}
+          isInlineFrame={isInlineFrame}
+          canBeConverted={canBeConverted}
         >
-          <AddressText
-            isFoundByStackScanning={isFoundByStackScanning}
-            isInlineFrame={isInlineFrame}
-            canBeConverted={canBeConverted}
-          >
-            {formattedAddress}
-          </AddressText>
-        </Tooltip>
-      </Address>
-    );
-  }
-}
+          {formattedAddress}
+        </Address>
+      </Tooltip>
+    </Wrapper>
+  );
+};
 
-const Toggle = styled(IconFilter)`
-  opacity: 0.33;
-  margin-right: 1ex;
+const TooltipAddressIcon = styled(Tooltip)`
+  margin-right: 1px;
+`;
+
+const TogglableAddressIcon = styled(IconFilter)`
   cursor: pointer;
   visibility: hidden;
   position: relative;
   top: 1px;
   display: none;
 
-  &:hover {
-    opacity: 1;
-  }
-
   @media (min-width: ${props => props.theme.breakpoints[0]}) {
     display: inline;
   }
 `;
 
-const AddressText = styled('span')<Partial<Props> & {canBeConverted: boolean}>`
-  border-bottom: ${p => {
-    if (p.isFoundByStackScanning) {
-      return `1px dashed ${p.theme.red400}`;
-    } else if (p.isInlineFrame) {
-      return `1px dashed ${p.theme.blue400}`;
-    } else {
-      return 'none';
-    }
-  }};
+const getAddresstextBorderBottom = (
+  p: Pick<Partial<Props>, 'isFoundByStackScanning' | 'isInlineFrame'> & {theme: Theme}
+) => {
+  if (p.isFoundByStackScanning) {
+    return `1px dashed ${p.theme.red400}`;
+  }
+
+  if (p.isInlineFrame) {
+    return `1px dashed ${p.theme.blue400}`;
+  }
+
+  return 'none';
+};
+
+const Address = styled('span')<Partial<Props> & {canBeConverted: boolean}>`
   padding-left: ${p => (p.canBeConverted ? null : '18px')};
+  border-bottom: ${getAddresstextBorderBottom};
 `;
 
-const Address = styled('span')`
+const Wrapper = styled('span')`
   font-family: ${p => p.theme.text.familyMono};
   font-size: ${p => p.theme.fontSizeExtraSmall};
   color: ${p => p.theme.gray700};
@@ -132,10 +129,6 @@ const Address = styled('span')`
   padding: 0 ${space(0.5)} 0 0;
   order: 1;
 
-  &:hover ${Toggle} {
-    visibility: visible;
-  }
-
   @media (min-width: ${props => props.theme.breakpoints[0]}) {
     padding: 0 ${space(0.5)};
     width: 117px;
@@ -145,3 +138,4 @@ const Address = styled('span')`
 `;
 
 export default TogglableAddress;
+export {TogglableAddressIcon};

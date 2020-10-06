@@ -1,5 +1,7 @@
 import PropTypes from 'prop-types';
 import React from 'react';
+import styled from '@emotion/styled';
+import PlatformIcon from 'platformicons';
 
 import FrameLine from 'app/components/events/interfaces/frame/frameLine';
 import {t} from 'app/locale';
@@ -7,6 +9,7 @@ import SentryTypes from 'app/sentryTypes';
 import {parseAddress, getImageRange} from 'app/components/events/interfaces/utils';
 import {Stacktrace} from 'app/types/stacktrace';
 import {PlatformType, Event} from 'app/types';
+import {List, ListItem} from 'app/components/list';
 
 type Props = {
   data: Stacktrace;
@@ -51,7 +54,7 @@ export default class StacktraceContent extends React.Component<Props, State> {
       firstFrameOmitted,
       lastFrameOmitted
     );
-    return <li {...props}>{text}</li>;
+    return <StyledListItem {...props}>{text}</StyledListItem>;
   };
 
   frameIsVisible = (frame, nextFrame) =>
@@ -190,10 +193,48 @@ export default class StacktraceContent extends React.Component<Props, State> {
       className += ' in-app-traceback';
     }
 
+    const {platform} = this.props;
+
     return (
-      <div className={className}>
-        <ul>{frames}</ul>
-      </div>
+      <Wrapper className={className}>
+        <StyledPlatformIcon
+          platform={platform}
+          size="20px"
+          style={{borderRadius: '3px 0 0 3px'}}
+        />
+        <StyledList platform={platform}>{frames}</StyledList>
+      </Wrapper>
     );
   }
 }
+
+const Wrapper = styled('div')`
+  position: relative;
+  border-top-left-radius: 0;
+`;
+
+const StyledPlatformIcon = styled(PlatformIcon)`
+  position: absolute;
+  top: -1px;
+  left: -20px;
+`;
+
+const StyledList = styled(List)<{platform: PlatformType}>`
+  padding-left: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  position: relative;
+`;
+
+const StyledListItem = styled(ListItem)`
+  padding-left: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  ul &:before {
+    content: none;
+  }
+  > *:first-child {
+    flex: 1;
+    width: 100%;
+  }
+`;

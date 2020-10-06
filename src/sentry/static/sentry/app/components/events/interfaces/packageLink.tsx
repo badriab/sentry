@@ -1,12 +1,10 @@
 import React from 'react';
 import styled from '@emotion/styled';
 
-import {IconChevron} from 'app/icons';
 import Tooltip from 'app/components/tooltip';
 import space from 'app/styles/space';
 import {defined} from 'app/utils';
 import {trimPackage} from 'app/components/events/interfaces/frame/utils';
-import {PackageStatusIcon} from 'app/components/events/interfaces/packageStatus';
 import overflowEllipsis from 'app/styles/overflowEllipsis';
 
 type Props = {
@@ -44,19 +42,10 @@ class PackageLink extends React.Component<Props> {
           <span>{'<unknown>'}</span>
         )}
         {children}
-        {isClickable && <LinkChevron direction="right" size="xs" />}
       </Package>
     );
   }
 }
-
-const LinkChevron = styled(IconChevron)`
-  opacity: 0;
-  transition: all 0.2s ease-in-out;
-  vertical-align: top;
-  margin-left: ${space(0.5)};
-  flex-shrink: 0;
-`;
 
 const Package = styled('a')<Partial<Props>>`
   font-size: 13px;
@@ -64,18 +53,9 @@ const Package = styled('a')<Partial<Props>>`
   padding: 0 0 0 ${space(0.5)};
   color: ${p => p.theme.gray700};
   cursor: ${p => (p.isClickable ? 'pointer' : 'default')};
-  ${PackageStatusIcon} {
-    opacity: 0;
-    flex-shrink: 0;
-  }
+
   &:hover {
     color: ${p => p.theme.gray700};
-    ${LinkChevron} {
-      opacity: 1;
-    }
-    ${PackageStatusIcon} {
-      opacity: 1;
-    }
   }
   display: flex;
 

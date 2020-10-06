@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 
 import {t} from 'app/locale';
 import {Meta, Frame} from 'app/types';
@@ -11,10 +10,6 @@ type Props = {
   className?: string;
 };
 
-type State = {
-  rawFunction: boolean;
-};
-
 type ToggleValueOutput =
   | string
   | {
@@ -22,16 +17,16 @@ type ToggleValueOutput =
       meta?: Meta;
     };
 
-class FrameFunctionName extends React.Component<Props, State> {
-  static propTypes = {
-    frame: PropTypes.object,
-  };
+type State = {
+  rawFunction: boolean;
+};
 
-  state = {
+class FrameFunctionName extends React.Component<Props, State> {
+  state: State = {
     rawFunction: false,
   };
 
-  toggle = (event: React.MouseEvent<HTMLAnchorElement>) => {
+  handleToggle = (event: React.MouseEvent<HTMLAnchorElement>) => {
     event.stopPropagation();
     this.setState(({rawFunction}) => ({rawFunction: !rawFunction}));
   };
@@ -82,9 +77,11 @@ class FrameFunctionName extends React.Component<Props, State> {
     if (!canToggle) {
       return <code {...props}>{this.getToggleValue()}</code>;
     }
+
     const title = this.state.rawFunction ? undefined : rawFunc;
+
     return (
-      <code {...props} title={title} onClick={this.toggle}>
+      <code {...props} title={title} onClick={this.handleToggle}>
         {this.getToggleValue(true)}
       </code>
     );

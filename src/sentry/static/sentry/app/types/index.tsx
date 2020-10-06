@@ -1480,7 +1480,14 @@ export type Widget = {
 
 export type EventGroupInfo = Record<EventGroupVariantKey, EventGroupVariant>;
 
-export type PlatformType = 'java' | 'csharp' | 'objc' | 'cocoa' | 'native' | 'other';
+export type PlatformType =
+  | 'java'
+  | 'csharp'
+  | 'objc'
+  | 'cocoa'
+  | 'native'
+  | 'javascript'
+  | 'other';
 
 export type Frame = {
   filename: string;
@@ -1491,10 +1498,10 @@ export type Frame = {
   context: Array<[number, string]>;
   vars: {[key: string]: any};
   inApp: boolean;
+  platform: PlatformType;
   function?: string;
   absPath?: string;
   rawFunction?: string;
-  platform: PlatformType;
   lineNo?: number;
   colNo?: number;
   package?: string;
