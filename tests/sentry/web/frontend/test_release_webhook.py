@@ -120,3 +120,32 @@ class BuiltinReleaseWebhookTest(TestCase):
         assert resp.status_code == 201, resp.content
         data = json.loads(resp.content)
         assert data["version"] == "a"
+
+
+class BuiltinReleaseWebhookTest2(TestCase):
+    def setUp(self):
+        super(BuiltinReleaseWebhookTest2, self).setUp()
+        self.organization = self.create_organization()
+        self.project = self.create_project(organization=self.organization, teams=[])
+        self.token = "a2587e3af83411e4a28634363b8514c2"
+        self.signature = hmac.new(
+            key=self.token.encode("utf-8"),
+            msg=("builtin-{}".format(self.project.id)).encode("utf-8"),
+            digestmod=sha256,
+        ).hexdigest()
+        ProjectOption.objects.set_value(self.project, "sentry:release-token", self.token)
+
+    @fixture
+    def path(self):
+        return reverse(
+            "sentry-release-hook",
+            kwargs={
+                "project_id": self.project.id,
+                "plugin_id": "builtin",
+                "signature": self.signature,
+            },
+        )
+
+    def test_no_teams_and_no_user(self):
+        resp = self.client.post(self.path, user=None, content_type="application/json")
+        assert resp.status_code == 403
